@@ -1,1 +1,98 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spinner Hadiah</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,sans-serif;color:#fff;background:radial-gradient(circle at 50% 10%,#3b1b75,#140b2c 42%,#07050e);display:flex;justify-content:center;padding:22px 14px}.wrap{width:min(520px,100%);text-align:center}.brand{font-size:30px;font-weight:900;margin:8px}.brand span{color:#facc15}.sub{color:#c9c4d8;margin-bottom:18px}.card{background:#ffffff0d;border:1px solid #ffffff20;box-shadow:0 18px 50px #0008;backdrop-filter:blur(14px);border-radius:24px;padding:18px}input{width:100%;border:1px solid #ffffff22;background:#fff0;color:#fff;padding:15px;border-radius:14px;text-align:center;font-size:16px;outline:0;margin-bottom:10px}button{border:0;border-radius:14px;padding:14px 20px;font-weight:800;cursor:pointer}.check{width:100%;background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff}.status{min-height:24px;margin-top:12px}.wheelbox{position:relative;width:min(360px,90vw);aspect-ratio:1;margin:25px auto}.pointer{position:absolute;z-index:5;left:50%;top:-4px;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:38px solid #facc15;filter:drop-shadow(0 3px 8px #000)}#wheel{width:100%;height:100%;border-radius:50%;border:8px solid #fff;box-shadow:0 0 22px #fff8,0 18px 40px #0008;transition:transform 5.2s cubic-bezier(.12,.8,.16,1)}.spin{background:linear-gradient(135deg,#facc15,#f97316);color:#fff;font-size:19px;padding:16px 42px;border-radius:50px;box-shadow:0 10px 25px #0008}.spin:disabled{opacity:.45}.result{display:none;margin-top:18px;padding:18px;border-radius:18px;background:#ffffff12}.result h2{margin:0 0 8px;color:#facc15}.prize{font-size:31px;font-weight:900}.small{font-size:12px;color:#aaa;margin-top:18px}</style></head><body><main class="wrap"><div class="brand">🎡 SPINNER <span>HADIAH</span></div><div class="sub">Masukkan kode redeem untuk mendapatkan kesempatan spin</div><section class="card"><input id="code" placeholder="SPIN-XXXXXXXX" autocomplete="off" maxlength="13"><button class="check" id="check">🔑 CEK KODE</button><div class="status" id="status"></div></section><div class="wheelbox"><div class="pointer"></div><canvas id="wheel" width="360" height="360"></canvas></div><button class="spin" id="spin" disabled>🎯 SPIN SEKARANG</button><section class="result" id="result"><h2>🎉 SELAMAT!</h2><div class="prize" id="prize"></div><div class="small">Kode ini sudah digunakan dan tidak dapat dipakai kembali.</div></section><div class="small">Admin: <b>/admin.html</b></div></main><script>const prizes=['Rp10.000','Rp20.000','Rp50.000','Voucher','Pulsa 10K','Coba Lagi','Rp100.000','Hadiah Spesial'],canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d'),codeEl=document.getElementById('code'),statusEl=document.getElementById('status'),spinBtn=document.getElementById('spin'),checkBtn=document.getElementById('check'),result=document.getElementById('result'),prizeEl=document.getElementById('prize');let currentCode='',rotation=0,busy=false;function draw(){let c=180,r=170,s=Math.PI*2/prizes.length;ctx.clearRect(0,0,360,360);for(let i=0;i<prizes.length;i++){let a=i*s;ctx.beginPath();ctx.moveTo(c,c);ctx.arc(c,c,r,a,a+s);ctx.closePath();ctx.fillStyle=i%2?'#facc15':'#ef4444';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();ctx.save();ctx.translate(c,c);ctx.rotate(a+s/2);ctx.fillStyle=i%2?'#111827':'#fff';ctx.font='900 13px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(prizes[i],r-13,0);ctx.restore()}ctx.beginPath();ctx.arc(c,c,27,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill()}draw();const msg=(t,c)=>{statusEl.textContent=t;statusEl.style.color=c};checkBtn.onclick=async()=>{if(busy)return;let code=codeEl.value.trim().toUpperCase();if(!code)return msg('⚠️ Masukkan kode terlebih dahulu.','#facc15');checkBtn.disabled=true;try{let r=await fetch('/api/check-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})}),d=await r.json();if(d.valid){currentCode=code;spinBtn.disabled=false;msg('✅ Kode valid! Kamu bisa spin.','#4ade80')}else{currentCode='';spinBtn.disabled=true;msg('❌ '+d.error,'#f87171')}}catch(e){msg('❌ Gagal terhubung ke server.','#f87171')}finally{checkBtn.disabled=false}};spinBtn.onclick=async()=>{if(busy||!currentCode)return;busy=true;spinBtn.disabled=true;checkBtn.disabled=true;codeEl.disabled=true;msg('🎡 Roda sedang berputar...','#facc15');try{let r=await fetch('/api/spin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:currentCode})}),d=await r.json();if(!d.ok)throw Error(d.error);let slice=360/prizes.length,target=360-(d.winnerIndex*slice+slice/2);rotation+=2160+((target-(rotation%360)+360)%360);canvas.style.transform='rotate('+rotation+'deg)';setTimeout(()=>{prizeEl.textContent=d.prize;result.style.display='block';msg('🎉 Spin selesai!','#facc15')},5300)}catch(e){msg('❌ '+e.message,'#f87171');spinBtn.disabled=false;checkBtn.disabled=false;codeEl.disabled=false;busy=false}}</script></body></html>
+spinBtn.onclick=async()=>{
+  if(busy||!currentCode)return;
+
+  busy=true;
+  spinBtn.disabled=true;
+  checkBtn.disabled=true;
+  codeEl.disabled=true;
+
+  msg('🎡 Roda sedang berputar...','#facc15');
+
+  try{
+    let r=await fetch('/api/spin',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code:currentCode})
+    });
+
+    let d=await r.json();
+
+    if(!d.ok)throw Error(d.error);
+
+    /*
+      =================================================
+      MENYESUAIKAN POSISI RODA DENGAN HADIAH
+      =================================================
+
+      Pointer berada di bagian ATAS roda.
+
+      Canvas awal:
+      0°   = kanan
+      90°  = bawah
+      180° = kiri
+      270° = atas
+
+      Karena pointer berada di atas, target pointer = 270°.
+    */
+
+    let slice=360/prizes.length;
+
+    let winnerCenter=
+      d.winnerIndex*slice+
+      slice/2;
+
+    let pointerAngle=270;
+
+    let desiredRotation=
+      pointerAngle-winnerCenter;
+
+    let currentRotation=
+      ((rotation%360)+360)%360;
+
+    let correction=
+      ((desiredRotation-currentRotation)+360)%360;
+
+    /*
+      6 putaran penuh + koreksi
+    */
+
+    rotation+=2160+correction;
+
+    canvas.style.transform=
+      'rotate('+rotation+'deg)';
+
+    /*
+      Tunggu animasi selesai.
+      Setelah roda berhenti, tampilkan hadiah
+      yang SAMA dengan sektor yang ditunjuk.
+    */
+
+    setTimeout(()=>{
+
+      prizeEl.textContent=d.prize;
+
+      result.style.display='block';
+
+      msg(
+        '🎉 Selamat! Hadiah kamu: '+d.prize,
+        '#facc15'
+      );
+
+      busy=false;
+
+    },5300);
+
+  }catch(e){
+
+    msg(
+      '❌ '+e.message,
+      '#f87171'
+    );
+
+    spinBtn.disabled=false;
+    checkBtn.disabled=false;
+    codeEl.disabled=false;
+
+    busy=false;
+  }
+}
