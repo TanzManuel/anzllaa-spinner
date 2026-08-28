@@ -1,2 +1,0 @@
-import {redis,json} from './_lib.js';
-export default async function handler(req,res){if(req.method!=='POST')return json(res,405,{valid:false,error:'Method tidak diizinkan.'});const code=String(req.body?.code||'').trim().toUpperCase();if(!/^SPIN-[A-Z0-9]{8}$/.test(code))return json(res,400,{valid:false,error:'Format kode tidak valid.'});const state=await redis.get(`spin:code:${code}`);return state==='available'?json(res,200,{valid:true}):json(res,200,{valid:false,error:'Kode sudah digunakan atau tidak tersedia.'})}

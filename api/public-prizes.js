@@ -1,2 +1,0 @@
-import {getPrizes,json} from './_lib.js';
-export default async function handler(req,res){if(req.method!=='GET')return json(res,405,{ok:false,error:'Method tidak diizinkan.'});return json(res,200,{ok:true,prizes:await getPrizes()})}
